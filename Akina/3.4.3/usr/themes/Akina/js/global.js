@@ -14,26 +14,45 @@ var ajaxcomments = function(){
 	   new_id = '', parent_id = '';
 
 	click_bind();
-    
-    $(comment_form).submit(function() { // 提交
+    /* 开始提交 */
+    $(comment_form).submit(function() {
 		/* 初始化评论框 */
 		$('.comment-respond textarea').css({"border":"2px  solid #DDE6EA"});
 		$('.commenttext').css({"border":"2px  solid #DDE6EA"});
-		/* 加载提示 */
 		$("#submit").val("提交中...");
-
-       /* 预检 */
-        var textValue = $(comment_form).find(textarea).html().replace(/(^\s*)|(\s*$)/g, "");//检查空格信息
-        var textValuex = $(comment_form).find(textarea).val().replace(/(^\s*)|(\s*$)/g, "");//检查空格信息
-
-        if (textValue == null || textValue == "") {
-			if(textValuex == null || textValuex == ""){
+		if($('#comment-author-info').length>0){
+			/*格式整理*/
+			var authorValue = $('#author').val().replace(/(^\s*)|(\s*$)/g, "");
+			var mailValue = $('#mail').val().replace(/(^\s*)|(\s*$)/g, "");
+			var urlValue = $('#url').val().replace(/(^\s*)|(\s*$)/g, "");
+			var textValue = $(comment_form).find(textarea).val().replace(/(^\s*)|(\s*$)/g, "");
+			/* 预检 */
+			var errorNum = 0;
+			if(authorValue == ""){
+				errorNum++;
+				$('#author').css({"border":"2px dashed #ff6c6c"});
+			}
+			if(mailValue == ""){
+				errorNum++;
+				$('#mail').css({"border":"2px dashed #ff6c6c"});
+			}
+			if(urlValue != ""){
+				if(urlValue.indexOf('https://') == -1 && urlValue.indexOf('http://') == -1){
+					errorNum++;
+					$('#url').css({"border":"2px dashed #ff6c6c"});
+			}
+			}
+			if(textValue == ""){
+				errorNum++;
 				$('.comment-respond textarea').css({"border":"2px dashed #ff6c6c"});
-              	$("#submit").val("再次提交");
+			}
+			if(errorNum != 0){
+				$("#comment-author-info").show();
+				$("#toggle-comment-info").html("[ 隐藏 ] ↑");
+				setTimeout(function(){ $("#submit").val("再次提交"); }, 500);
 				return false;
 			}
 		}
-		
         $.ajax({
             url: $(this).attr('action'),
             type: $(this).attr('method'),
@@ -45,9 +64,12 @@ var ajaxcomments = function(){
             success: function(data) { //成功取到数据
                 try {
                     if (!$(comment_list, data).length) {
-						$("#comment-author-info").show();
-                        $('.commenttext').css({"border":"2px dashed #ff6c6c"});
-						$("#submit").val("再次提交");
+                        $("#comment-author-info").show();
+                        var msg =$(data)[7].innerHTML.replace(/\s*/g,"");
+                        $(document).ready(function(){
+                            $.alert("提示",msg);
+                        });
+                        setTimeout(function(){ $("#submit").val("再次提交"); }, 500);
                         return false;
                     } else {
                         new_id = $(comment_list, data).html().match(/id=\"?comment-\d+/g).join().match(/\d+/g).sort(function(a, b) {
@@ -228,9 +250,16 @@ var clickEvent = function(){
     $(".smilies-box").fadeToggle("fast");
   });
 
-//comment-author-info-toggle akina-1.05
-$("#toggle-comment-info").click(function(){
-    $("#comment-author-info").slideToggle("slow");
+//评论者信息 显示/隐藏
+$("#toggle-comment-info").click(function click_comment_info(){
+    var comment_info = $("#toggle-comment-info");
+    var author_info = $("#comment-author-info");
+    if(author_info.css("display") == "none"){
+        comment_info.html("[ 隐藏 ] ↑");
+    }else{
+        comment_info.html("[ 修改 ] ↓");
+    }
+    author_info.slideToggle("slow");
   });
 
 //打赏 8.15
@@ -350,4 +379,27 @@ $(document).ready(function(){
 	$("a[href*='://']:not(a[href^='"+document.location.protocol+"//"+document.location.host+"'],a[href^='javascript:'])").attr({target:"_blank",rel:"nofollow noopener noreferrer"});
 	$(".links a[href*='://']").removeAttr("rel");
 });
-console.log("%cAkina for Typecho 3.3.1","background:#ff6d6d;color:#fff;margin:10px;padding:6px;","https://zhebk.cn");
+//窗口提示
+function Fytx_Tips() {
+    var _this = this;
+    _this.Fytx_alert = function(obj) {
+        if ($("div").is(".fytx_alert_background")) $('.fytx_alert_background').remove();
+        var _fytx_alert_background = '<div class="fytx_alert_background"><div class="fytx_alert_box">' + '<div class="fytx_alert_title">' + obj.title + '</div>' + '<div class="fytx_alert_message">' + obj.message + '</div>' + '<span class="fytx_alert_btn">知道了</span>' + '</div></div>';
+        $('body').append(_fytx_alert_background);
+    }
+}
+$(document).ready(function() {
+    var Fytx = new Fytx_Tips();
+    $.alert = function(title, msg) {
+        Fytx.Fytx_alert({
+            title: title,
+            message: msg
+        })
+    },
+    $("body").on("click", ".fytx_alert_btn",
+    function() {
+        $(".fytx_alert_background").hide();
+    });
+});
+//版本显示
+console.log("%cAkina for Typecho 3.4.3","background:#ff6d6d;color:#fff;margin:10px;padding:6px;","https://zhebk.cn");
